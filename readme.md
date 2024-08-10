@@ -37,7 +37,15 @@ For more information, see "Older and unsupported version" at [MuseScore download
 
 ## MuseScore Plugin
 
-You will find the **export-location-info-phys.qml**  plugin in /plugins. You must "install" it in MuseScore in order to use it. 
+You will find the **export-location-info-phys.qml**  plugin in /plugins. You must "install" it in MuseScore in order to use it. Installing was a bit strange. I recall doing this:
+
+    Open Plugins->Plugin Creator
+        a) load ./plugins/location-info.qml into the built-in editor (no need to edit it)
+        b) save it in the plugin directory  
+        c) now you should see it in Plugins->Plugin Manager. Select it and click 'OK'  
+        d) Load a musicXML score (might need to be in the .mscz format)  
+        e) Run the plugin with Plugins->Plugin Manager -> location-info
+        f) It allows you to choose the directory for saving the time/label .json file. 
 
 One unfortunate feature is that the workflow can not be run from the command line, and thus cannot be 'batched.' This is because the unrolling of repeats is done in a way that includes and depends on the score display. That means the original score to [midi, audio, labels] files must be done from the MuseScore GUI. However, all the timing (and other) variations can be done in python and batched (which is probably where most of the data generation is done, anyway.)
 
