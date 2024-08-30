@@ -1,6 +1,7 @@
 import mido
 import math
 import argparse
+import os
 
 def sine_wave(period, amplitude, time):
     """
@@ -13,7 +14,7 @@ def sine_wave(period, amplitude, time):
 def find_last_event_tick(midi_file):
     return max(sum(msg.time for msg in track) for track in midi_file.tracks)
 
-def process_midi_file(input_file, output_file, period, amplitude, spacing):
+def process_midi_file(input_file, period, amplitude, spacing):
     mid = mido.MidiFile(input_file)
     output_mid = mido.MidiFile(type=mid.type, ticks_per_beat=mid.ticks_per_beat)
 
@@ -94,7 +95,8 @@ def process_midi_file(input_file, output_file, period, amplitude, spacing):
         if track[-1].type != 'end_of_track':
             track.append(mido.MetaMessage('end_of_track', time=0))
 
-    output_mid.save(output_file)
+    return output_mid
+    
 
 def main():
     parser = argparse.ArgumentParser(description="Vary tempo of a MIDI file using a sine wave")
@@ -106,7 +108,10 @@ def main():
     
     args = parser.parse_args()
 
-    process_midi_file(args.midi, args.output, args.period, args.amplitude, args.spacing)
+    output_mid=process_midi_file(args.midi, args.period, args.amplitude, args.spacing)
+    os.makedirs(os.path.dirname(args.output), exist_ok=True)
+    output_mid.save(args.output)
+
     print(f"Processed MIDI file saved as {args.output}")
 
 if __name__ == "__main__":

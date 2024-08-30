@@ -381,31 +381,72 @@ MuseScore {
 		}
 	}
 
+/*
+* 	function labelBeat(cursor, measureMap, doneMap) {
+* 		//console.log("D: " + showPos(cursor, measureMap) + ": " +
+* 		//    nameElementType(cursor.element.type));
+* 		if (cursor.element.type !== Element.CHORD)
+* 			return;
+* 
+* 		var t = cursor.segment.tick;
+* 		if (doneMap[t])
+* 			return;
+* 
+* 		var m = measureMap[cursor.measure.firstSegment.tick];
+* 		var text = "?";
+* 		if (m && t >= m.tick && t < m.past) {
+* 			var b = 1 + (t - m.tick) / m.ticksB;
+* 			text = "" + b;
+* 		}
+* 		if (text == "" || text == "?")
+* 			return;
+* 		text = "a\u0084" + m.no + "\u0084" + text + "\u0084w";
+* 
+* 		var elt = newElement(Element.STAFF_TEXT);
+* 		elt.text = text;
+* 		cursor.add(elt);
+* 		doneMap[t] = true;
+* 	}
+*/
+
 	function labelBeat(cursor, measureMap, doneMap) {
-		//console.log("D: " + showPos(cursor, measureMap) + ": " +
-		//    nameElementType(cursor.element.type));
-		if (cursor.element.type !== Element.CHORD)
-			return;
+    if (cursor.element.type !== Element.CHORD)
+        return;
 
-		var t = cursor.segment.tick;
-		if (doneMap[t])
-			return;
+    var t = cursor.segment.tick;
+    if (doneMap[t])
+        return;
 
-		var m = measureMap[cursor.measure.firstSegment.tick];
-		var text = "?";
-		if (m && t >= m.tick && t < m.past) {
-			var b = 1 + (t - m.tick) / m.ticksB;
-			text = "" + b;
-		}
-		if (text == "" || text == "?")
-			return;
-		text = "a\u0084" + m.no + "\u0084" + text + "\u0084w";
+    var m = measureMap[cursor.measure.firstSegment.tick];
+    var text = "?";
+    if (m && t >= m.tick && t < m.past) {
+        var beatDuration;
+        // Check if the time signature is compound (e.g., 6/8)
+        if (m.tsD === 8 && (m.tsN % 3 === 0)) {
+            // Compound time signature
+            beatDuration = m.ticksM / (m.tsN / 3); // 2 beats in 6/8, 3 in 9/8, etc.
+            var beatNumber = 1 + (t - m.tick) / beatDuration;
+            text = "" + beatNumber.toFixed(2);
+        } else {
+            // Simple time signature
+            beatDuration = m.ticksB;
+            var beatNumber = 1 + (t - m.tick) / beatDuration;
+            text = "" + beatNumber.toFixed(2);
+        }
+    }
 
-		var elt = newElement(Element.STAFF_TEXT);
-		elt.text = text;
-		cursor.add(elt);
-		doneMap[t] = true;
-	}
+    if (text == "" || text == "?")
+        return;
+
+    text = "a\u0084" + m.no + "\u0084" + text + "\u0084w";
+
+    var elt = newElement(Element.STAFF_TEXT);
+    elt.text = text;
+    cursor.add(elt);
+    doneMap[t] = true;
+}
+
+
 
 	function analyseBeat(cursor, analyseMap) {
 		if (cursor.element.type !== Element.CHORD)

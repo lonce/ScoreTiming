@@ -20,12 +20,15 @@ def process_json_file(input_file):
 
     # Write the formatted data to the output file
     with open(output_file, 'w') as f:
-        for triplet in time_positions:
-            if len(triplet) == 3:
-                time, bar_number, beat_number = triplet
+        for evlist in time_positions:
+            if len(evlist) == 3:
+                time, bar_number, beat_number = evlist
                 f.write(f"{time}\t{time}\t{bar_number},{beat_number}\n")
+            elif len(evlist) == 4:
+                time, bar_number, beat_number, tick_number = evlist
+                f.write(f"{time}\t{time}\t{bar_number},{beat_number},{tick_number}\n")
             else:
-                print(f"Warning: Invalid triplet found in the data: {triplet}")
+                print(f"Warning: Invalid evlist found in the data: {evlist}")
 
     print(f"Output written to: {output_file}")
 
