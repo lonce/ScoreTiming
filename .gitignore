@@ -1,5 +1,8 @@
 **/.ipynb_checkpoints/
+**/__pycache__/
 **/scratch/
 **/scratch2/
 **/deleteme/
 **/*Zone.Identifier
+**/VarData/
+*.npz

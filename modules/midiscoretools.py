@@ -12,8 +12,45 @@ from music21.midi.translate import getTimeForEvents
 import numpy as np
 from scipy import sparse
 
+import subprocess
+
+# I think recent python versions may have this built-in
+def float_range(start, stop, step):
+    while start < stop:
+        yield round(start, 10)  # rounding to avoid floating-point precision issues
+        start += step
+        
+
+#This is handy because we use both scipy's compression for sparse matrices and np's savez  and they are inconstent about generating and using the extension
+def addExtensionIfNeeded(fname, ext=".npz") :
+    # Split the filename into name and extension
+    name_parts = fname.split('.')
+     
+    # Check if the last part is ext (case insensitive)
+    if name_parts[-1].lower() != ext:
+        # If not, add ext as a new extension
+        fname = fname + ext
+    return fname
+
+
+
+def render_wav_with_fluidsynth(midi_file,  output_wav_file):
+    command = [
+        "fluidsynth",
+        "-ni",              # No interactive mode
+        "/usr/share/sounds/sf2/FluidR3_GM.sf2",     # Path to the SoundFont file (.sf2)
+        midi_file,          # Path to the MIDI file
+        "-F", output_wav_file,  # Output to WAV file
+        "-r", "44100"       # Sample rate (optional, 44100 Hz in this example)
+    ]
+
+    subprocess.run(command, check=True)
+
+    
+
 def loadBitmap(fname) :
     # To load the sparse matrix:
+    fname=addExtensionIfNeeded(fname, '.npz')
     loaded_sparse_matrix = sparse.load_npz(fname)
 
     # Convert the sparse matrix back to a dense numpy array:
@@ -21,7 +58,8 @@ def loadBitmap(fname) :
 
 def saveBitmap(fname, m) :
     sparse_matrix = sparse.csr_matrix(m)
-    sparse.save_npz(fname + '.npz', sparse_matrix, compressed=True)
+    fname=addExtensionIfNeeded(fname, '.npz')
+    sparse.save_npz(fname , sparse_matrix, compressed=True)
 
 
 #################################################################################
@@ -42,12 +80,12 @@ def _read_midi_pitches_intervals(midi_file, **kwargs):
     for t, ev in getTimeForEvents(track0):
         if ev.type == MetaEvents.SET_TEMPO:
 
-            print(f' ev.data is  {ev.data}')
+            #print(f' ev.data is  {ev.data}')
             #need to index a tuple in the notebook, but in the module getNumber is already an in
             #print(f' mspq will be set to {getNumber(ev.data, 3)}[0]')
-            print(f' mspq will be set to {getNumber(ev.data, 3)}')
+            #print(f' mspq will be set to {getNumber(ev.data, 3)}')
             mspq = getNumber(ev.data, 3)  # first data is number
-            print(f' mspq is { mspq }')
+            #print(f' mspq is { mspq }')
 
 
 
@@ -67,7 +105,7 @@ def _read_midi_pitches_intervals(midi_file, **kwargs):
         tracks = range(len(midi.tracks))
 
     for track_index in tracks:
-        print(f'track_index = {track_index}')
+        #print(f'track_index = {track_index}')
         track = midi.tracks[track_index]
         raw_events = getTimeForEvents(track)
         events = {}
@@ -105,7 +143,7 @@ def midi_to_bitmap(file_name, fps = 86.1238):
     pitches, intervals = _read_midi_pitches_intervals(file_name)
     # frames = np.zeros((int(np.max(intervals)/hop) + 1, max(pitches) + 1), dtype=int)
     frames = np.zeros((int(np.max(intervals)/hop) + 1, 128), dtype=int)
-    print(frames.shape)
+    print("frames.shape is {frames.shape}")
     for pitch, interval in zip(pitches, intervals):
         for i in range(int(interval[0] / hop), int(interval[1] / hop) + 1):
             frames[i][pitch] = 1
@@ -369,15 +407,60 @@ class Frame:
         Frame(num, startTick, startTime, middleTick, middleTime, measure, beat, refframe (number))
         The refframe is the "allignment" with a frame in another rendering of the same piece. 
     '''
-    def __init__(self, num=None, sTk=None, sTm=None, mTk=None, mTm=None, measure=None, beat=None, refframe=None):
+    def __init__(self, num=np.nan, sTk=np.nan, sTm=np.nan, mTk=np.nan, mTm=np.nan, measure=np.nan, beat=np.nan, refframe=np.nan):
         self.num = num  # frame number (index in a sequence)
         self.sTk = sTk  # starting tick
         self.sTm = sTm  # starting time
         self.mTk = mTk  # middle tick
-        self.mTm = mTm  #middle time
-        self.measure=measure    # measure in which the middle of the frame is contained. 
-        self.beat=beat          # beat corresponding to middle tick (mTk) 
-        self.refframe=refframe  # the best corresponding frame number in a reference file
+        self.mTm = mTm  # middle time
+        self.measure = measure  # measure in which the middle of the frame is contained. 
+        self.beat = beat  # beat corresponding to middle tick (mTk) 
+        self.refframe = refframe  # the best corresponding frame number in a reference file
+
+    ############################
+    # The following methods are just for loading and saveing to .npz files for compactness
+    ############################
+    @classmethod
+    def from_dict(cls, data):
+        return cls(**data)
+
+    def to_dict(self):
+        return {attr: getattr(self, attr) for attr in vars(self) if not attr.startswith('_')}
+
+    @classmethod
+    def save_frames(cls, frames, fname):
+        if not frames:
+            raise ValueError("No frames to save")
+        
+        data = {attr: np.array([getattr(frame, attr) for frame in frames])
+                for attr in vars(frames[0]) if not attr.startswith('_')}
+        
+        fname=addExtensionIfNeeded(fname, '.npz')
+        np.savez_compressed(fname, **data)
+
+    @classmethod
+    def load_frames(cls, fname):
+        fname=addExtensionIfNeeded(fname, '.npz')
+        loaded_data = np.load(fname)
+        
+        frames = []
+        for i in range(len(next(iter(loaded_data.values())))):
+            frame_data = {key: loaded_data[key][i] for key in loaded_data.keys()}
+            frames.append(cls.from_dict(frame_data))
+        
+        return frames
+
+
+    # # Usage example for saving and loadiing:
+    # Frame.save_frames(frames, 'frames.npz')
+
+    # # Loading frames
+    # loaded_frames = Frame.load_frames('frames.npz')
+
+    # # Checking the loaded data
+    # for frame in loaded_frames:
+    #     print(frame.to_dict())
+
 
     def print_short(self):
         return f'({self.num}, mTk={self.mTk}, mTm={self.mTm}, measure={self.measure}, beat={self.beat})'
@@ -387,3 +470,27 @@ class Frame:
     
     def __repr__(self):
         return f"Frame({self.num}, sTk={self.sTk}, sTm={self.sTm}, mTk={self.mTk}, mTm={self.mTm}, measure={self.measure}, beat={self.beat}, refframe={self.refframe})"
+
+
+
+# Creates a list of frames with start, end, and middle tick clock times for a midi file (with its evolving ticks-per-time)
+def midi2frameskeleton(midi_file, fps) :
+
+    mf = MidiFile()
+    mf.open(midi_file)
+    mf.read()
+
+
+    maxTick=count_total_ticks(midi_file)
+    maxTime=tick2time(mf, maxTick)
+    
+    fdur=1/fps
+    halffdur=fdur/2
+    
+    framelist=[]
+
+    for i, t in enumerate(float_range(0, maxTime, fdur)):
+        frame=Frame(i, time2tick(mf,t), round(t, 3), time2tick(mf,t+halffdur), round((t+halffdur), 3), refframe=i)
+        framelist.append(frame)
+    return framelist
+
