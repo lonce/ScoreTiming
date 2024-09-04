@@ -88,7 +88,7 @@ def main():
 		##########################################################
 		# Midi to Frame Lis 
 		##########################################################
-		frameList=midi2frameskeleton(input_midi,sample_rate/win_length)
+		frameList=midi2frameskeleton(input_midi,sample_rate/hop_length)
 		Frame.save_frames(frameList, output_frames)
 
 
