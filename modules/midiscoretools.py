@@ -22,14 +22,16 @@ def float_range(start, stop, step):
         
 
 #This is handy because we use both scipy's compression for sparse matrices and np's savez  and they are inconstent about generating and using the extension
-def addExtensionIfNeeded(fname, ext=".npz") :
+def addExtensionIfNeeded(fname, ext="npz") :
     # Split the filename into name and extension
     name_parts = fname.split('.')
      
     # Check if the last part is ext (case insensitive)
-    if name_parts[-1].lower() != ext:
+    fnameext=name_parts[-1].lower()
+    if (fnameext) != ext:
         # If not, add ext as a new extension
-        fname = fname + ext
+        print(f'addExtensionIfNeeded will add {ext} for {fname}')
+        fname = fname + '.'+ext
     return fname
 
 
@@ -50,7 +52,7 @@ def render_wav_with_fluidsynth(midi_file,  output_wav_file):
 
 def loadBitmap(fname) :
     # To load the sparse matrix:
-    fname=addExtensionIfNeeded(fname, '.npz')
+    fname=addExtensionIfNeeded(fname, 'npz')
     loaded_sparse_matrix = sparse.load_npz(fname)
 
     # Convert the sparse matrix back to a dense numpy array:
@@ -58,7 +60,7 @@ def loadBitmap(fname) :
 
 def saveBitmap(fname, m) :
     sparse_matrix = sparse.csr_matrix(m)
-    fname=addExtensionIfNeeded(fname, '.npz')
+    fname=addExtensionIfNeeded(fname, 'npz')
     sparse.save_npz(fname , sparse_matrix, compressed=True)
 
 
@@ -435,12 +437,12 @@ class Frame:
         data = {attr: np.array([getattr(frame, attr) for frame in frames])
                 for attr in vars(frames[0]) if not attr.startswith('_')}
         
-        fname=addExtensionIfNeeded(fname, '.npz')
+        fname=addExtensionIfNeeded(fname, 'npz')
         np.savez_compressed(fname, **data)
 
     @classmethod
     def load_frames(cls, fname):
-        fname=addExtensionIfNeeded(fname, '.npz')
+        fname=addExtensionIfNeeded(fname, 'npz')
         loaded_data = np.load(fname)
         
         frames = []
@@ -463,13 +465,13 @@ class Frame:
 
 
     def print_short(self):
-        return f'({self.num}, mTk={self.mTk}, mTm={self.mTm}, measure={self.measure}, beat={self.beat})'
+        return f'({self.num}, mTk={self.mTk}, mTm={self.mTm:.3f}, measure={self.measure:.3f}, beat={self.beat:.3f})'
         
     def __str__(self):
-        return f"Frame({self.num}, sTk={self.sTk}, sTm={self.sTm}, mTk={self.mTk}, mTm={self.mTm}, measure={self.measure}, beat={self.beat}, refframe={self.refframe})"
+        return f"Frame({self.num}, sTk={self.sTk}, sTm={self.sTm:.3f}, mTk={self.mTk}, mTm={self.mTm:.3f}, measure={self.measure}, beat={self.beat:.3f}, refframe={self.refframe})"
     
     def __repr__(self):
-        return f"Frame({self.num}, sTk={self.sTk}, sTm={self.sTm}, mTk={self.mTk}, mTm={self.mTm}, measure={self.measure}, beat={self.beat}, refframe={self.refframe})"
+        return f"Frame({self.num}, sTk={self.sTk}, sTm={self.sTm:.3f}, mTk={self.mTk}, mTm={self.mTm:.3f}, measure={self.measure}, beat={self.beat:.3f}, refframe={self.refframe})"
 
 
 
