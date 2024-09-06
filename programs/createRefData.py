@@ -9,6 +9,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from modules.midiscoretools import midi_to_bitmap, extract_time_signatures, count_total_ticks, Frame, loadBitmap, saveBitmap
 from modules.midiscoretools import time2tick, tick2time, ticks_per_beat_at_tick, beats_per_measure_at_tick, midi2frameskeleton
+from modules.midiscoretools import update_json_metadata
 
 ###################################
 # utilities
@@ -122,7 +123,8 @@ def main():
 	parser.add_argument("-ob", "--outputbitmap", required=True, help="bitmap representation of midi file")
 	parser.add_argument("-of", "--outputframes", required=True, help="Frame data for matching")
 	parser.add_argument("-r",  "--rate", type=float, required=True, help="FPS used to slice midi file (defaul 44100/512)")
-    
+	parser.add_argument("-j", "--metadata", nargs="?", default=None, help="Path to the variation metadata json")
+
 	args = parser.parse_args()
 	print(f'createRefData args are {args}')
 
@@ -137,7 +139,12 @@ def main():
 	###############################################
 	# Save the matrix to a binary file in .npy format
 	#np.save(args.outputbitmap, bitmap) # adds an npy extension to the save file 
-	saveBitmap(args.outputbitmap,bitmap )  #this saves as npz, WAY smaller file size!
+	saveBitmap(args.outputbitmap,bitmap.T )  #this saves as npz, WAY smaller file size!
+	if (args.metadata != None) : 
+		update_json_metadata(args.metadata, {
+			"Midi bitmap file" : args.outputbitmap,
+	        "Midi bitmap orientation": "time along rows"
+	    })
 
 	###############################################
 

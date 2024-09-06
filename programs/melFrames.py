@@ -8,7 +8,7 @@ import librosa
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from modules.midiscoretools import render_wav_with_fluidsynth, Frame, midi2frameskeleton
+from modules.midiscoretools import render_wav_with_fluidsynth, Frame, midi2frameskeleton, update_json_metadata
 
 def parse_arguments():
 
@@ -24,6 +24,7 @@ def parse_arguments():
 	parser.add_argument("--hop_length", type=int, default=256, help="Hop length for STFT (default: 256)")
 	parser.add_argument("--n_mels", type=int, default=64, help="Number of mel bands (default: 64)")
 	parser.add_argument("--f_min", type=float, default=20.0, help="Minimum frequency for mel bands (default: 20.0)")
+	parser.add_argument("-j", "--metadata", nargs="?", default=None, help="Path to the variation metadata json")
 
 	if len(sys.argv) == 1:
 		parser.print_help(sys.stderr)
@@ -81,8 +82,14 @@ def main():
 		# Convert to decibels
 		spec_db = librosa.power_to_db(mel_spec, ref=np.max)
 
-		# Save
-		np.savez(output_mel, data=spec_db)
+		# Save (translating so that each time point is a row - convienient for HDF5 storage and chunking)
+		np.savez(output_mel, spec_db.T)
+		if (args.metadata != None) : 
+			update_json_metadata(args.metadata, {
+				"Mel matrix file" : output_mel,
+		        "Mel orientation": "time along rows"
+		    })
+
 
 
 		##########################################################

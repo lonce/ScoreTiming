@@ -1,7 +1,11 @@
 import mido
 import math
 import argparse
+
+import sys
 import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from modules.midiscoretools import update_json_metadata
 
 def sine_wave(period, amplitude, time):
     """
@@ -105,12 +109,20 @@ def main():
     parser.add_argument("-p", "--period", type=float, required=True, help="Sine wave period in seconds")
     parser.add_argument("-a", "--amplitude", type=float, required=True, help="Sine wave amplitude in octaves")
     parser.add_argument("-sp", "--spacing", type=float, required=True, help="Spacing between new tempo events in seconds")
+    parser.add_argument("-j", "--metadata", nargs="?", default=None, help="Path to the variation metadata json")
     
     args = parser.parse_args()
 
     output_mid=process_midi_file(args.midi, args.period, args.amplitude, args.spacing)
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
     output_mid.save(args.output)
+
+
+    if (args.metadata != None) : 
+        update_json_metadata(args.metadata, {
+            "Variator program" : f'tempoVariator_time (sine) --period {args.period} --amplitude {args.amplitude} --spacing {args.spacing}',
+        })
+
 
     print(f"Processed MIDI file saved as {args.output}")
 

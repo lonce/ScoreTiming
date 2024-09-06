@@ -2,6 +2,8 @@
 
 from music21 import midi, meter, tempo, converter
 import os 
+import json
+from datetime import datetime
 from music21.midi import MidiFile, MetaEvents, getNumber, ChannelVoiceMessages
 
 from collections import namedtuple
@@ -13,6 +15,54 @@ import numpy as np
 from scipy import sparse
 
 import subprocess
+
+
+def create_json_file_if_not_exists(file_name):
+    # Ensure the directory exists
+    directory = os.path.dirname(file_name)
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory)
+    
+    # Create the file with an empty JSON object if it doesn't exist
+    if not os.path.exists(file_name):
+        with open(file_name, 'w') as f:
+            json.dump({}, f)
+        print(f"File created with empty JSON object: {file_name}")
+
+
+def update_json_metadata(file_name, new_data):
+    """
+    Reads the existing JSON data from a file, merges it with new data, adds a timestamp,
+    and writes it back to the file.
+
+    Parameters:
+    file_name (str): The path to the JSON file.
+    new_data (dict): The new JSON data to be merged with the existing data.
+    """
+    # Step 1: Read the existing file if it exists, else start with an empty dictionary
+    create_json_file_if_not_exists(file_name)
+    with open(file_name, 'r') as f:
+            data = json.load(f)
+
+    # if os.path.exists(file_name):
+    #     with open(file_name, 'r') as f:
+    #         data = json.load(f)
+    # else:
+    #     data = {}
+
+    # Step 2: Add the current date and time
+    current_datetime = datetime.now().isoformat()  # ISO 8601 format
+    new_data['date_written'] = current_datetime
+
+    # Step 3: Update the existing data with new data (merge the dictionaries)
+    data.update(new_data)
+
+    # Step 4: Write the merged data back to the file (overwrite or create if necessary)
+    with open(file_name, 'w') as f:
+        json.dump(data, f, indent=4)
+
+
+
 
 # I think recent python versions may have this built-in
 def float_range(start, stop, step):
@@ -30,7 +80,6 @@ def addExtensionIfNeeded(fname, ext="npz") :
     fnameext=name_parts[-1].lower()
     if (fnameext) != ext:
         # If not, add ext as a new extension
-        print(f'addExtensionIfNeeded will add {ext} for {fname}')
         fname = fname + '.'+ext
     return fname
 

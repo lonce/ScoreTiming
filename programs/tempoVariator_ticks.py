@@ -2,6 +2,11 @@ import mido
 import math
 import argparse
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from modules.midiscoretools import update_json_metadata
+
 def sine_wave(period, amplitude, tick):
     frequency = 2 * math.pi / period
     sine_value = math.sin(frequency * tick)
@@ -14,7 +19,7 @@ def find_true_end_tick(midi_file):
         end_tick = max(end_tick, track_ticks)
     return end_tick
 
-def process_midi_file(input_file, output_file, period, amplitude, spacing):
+def process_midi_file(input_file, period, amplitude, spacing):
     mid = mido.MidiFile(input_file)
     output_mid = mido.MidiFile(type=mid.type, ticks_per_beat=mid.ticks_per_beat)
 
@@ -95,7 +100,8 @@ def process_midi_file(input_file, output_file, period, amplitude, spacing):
             end_of_track = mido.MetaMessage('end_of_track', time=0)
             track.append(end_of_track)
 
-    output_mid.save(output_file)
+    return output_mid
+
 
 def main():
     parser = argparse.ArgumentParser(description="Vary tempo of a MIDI file using a sine wave")
@@ -104,11 +110,22 @@ def main():
     parser.add_argument("-p", "--period", type=int, required=True, help="Sine wave period in ticks")
     parser.add_argument("-a", "--amplitude", type=float, required=True, help="Sine wave amplitude in octaves")
     parser.add_argument("-sp", "--spacing", type=int, required=True, help="Spacing between new tempo events in ticks")
+    parser.add_argument("-j", "--metadata", nargs="?", default=None, help="Path to the variation metadata json")
     
     args = parser.parse_args()
 
-    process_midi_file(args.midi, args.output, args.period, args.amplitude, args.spacing)
+    output_mid=process_midi_file(args.midi, args.period, args.amplitude, args.spacing)
     print(f"Processed MIDI file saved as {args.output}")
+
+
+
+    output_mid.save(args.output)
+
+    if (args.metadata != None) : 
+        update_json_metadata(args.metadata, {
+            "Variator program" : f'tempoVariator_ticks (sine) --period {args.period} --amplitude {args.amplitude} --spacing {args.spacing}'),
+        })
+
 
 if __name__ == "__main__":
     main()

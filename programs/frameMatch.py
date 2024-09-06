@@ -5,7 +5,7 @@ from bisect import bisect_left
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from modules.midiscoretools import Frame
+from modules.midiscoretools import Frame, update_json_metadata, addExtensionIfNeeded
 
 
 def find_closest_frame(f1_frames, f2_frame):
@@ -35,6 +35,11 @@ def main():
     parser.add_argument("file1", help="Path to the first input file (f1)")
     parser.add_argument("file2", help="Path to the second input file (f2)")
     parser.add_argument("output", help="Path to the output file")
+    # parser.add_argument("gtoutput", nargs="?", default=None, help="Path to the ground truth refframe list output file")
+    parser.add_argument("gtoutput", help="Path to the ground truth refframe list output file")
+    parser.add_argument("-j", "--metadata", nargs="?", default=None, help="Path to the variation metadata json")
+
+
     args = parser.parse_args()
 
     f1_frames = Frame.load_frames(args.file1)
@@ -42,6 +47,16 @@ def main():
 
     updated_f2_frames = process_frames(f1_frames, f2_frames)
     Frame.save_frames(updated_f2_frames, args.output)
+
+    # now save the ground truth vector
+    gt = np.array([x.refframe for x in updated_f2_frames])
+    np.savez(addExtensionIfNeeded(args.gtoutput, ext="npz"), gt)
+
+    if (args.metadata != None) : 
+        update_json_metadata(args.metadata, {
+            "gt output file": args.gtoutput
+        })
+
 
     print(f"Processed frames saved to {args.output}")
 
