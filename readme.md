@@ -25,7 +25,7 @@ Now you have a new and different [midi, audio, label] set that you can align wit
 
 You can look at all 3 files [audio, midi, label] nicely aligned in Audacity:
 
-![](.\images\Screen-2024-12-05_10-13-52.jpg)
+![Placeholder Image](images/Screen-2024-12-05_10-13-52.jpg)
 
 
 
