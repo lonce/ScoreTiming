@@ -23,6 +23,10 @@ That's it. You can have a [midi, audio, label] file set and can identify the cor
 
 Now you have a new and different [midi, audio, label] set that you can align with the original score! 
 
+You can look at all 3 files [audio, midi, label] nicely aligned in Audacity:
+
+![](.\images\Screen-2024-12-05_10-13-52.jpg)
+
 
 
 ## MuseScore
